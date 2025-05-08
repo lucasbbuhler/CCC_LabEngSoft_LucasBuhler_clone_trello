@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Botao from "./Botao";
 
 export default function NovaTarefa({ onAdicionar }) {
   const [texto, setTexto] = useState("");
@@ -29,20 +30,15 @@ export default function NovaTarefa({ onAdicionar }) {
           fontSize: "14px",
         }}
       />
-      <button
-        onClick={adicionar}
-        style={{
-          padding: "6px 10px",
-          backgroundColor: "#007bff",
-          color: "#fff",
-          border: "none",
-          borderRadius: "6px",
-          fontSize: "14px",
-          cursor: "pointer",
-        }}
-      >
-        Adicionar
-      </button>
+      <Botao onClick={adicionar}>
+          Adicionar
+      </Botao>
+      </div>
+      {erro && (
+        <div style={{ color: "red", fontSize: "12px" }}>
+          O nome do painel não pode estar vazio.
+        </div>
+      )}
     </div>
   );
 }
