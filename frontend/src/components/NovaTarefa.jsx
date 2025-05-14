@@ -3,7 +3,8 @@ import Botao from "./Botao";
 
 export default function NovaTarefa({ onAdicionar }) {
   const [texto, setTexto] = useState("");
-
+  const [erro, setErro] = useState(false);
+  
   const adicionar = () => {
     if (texto.trim()) {
       onAdicionar({
@@ -12,6 +13,9 @@ export default function NovaTarefa({ onAdicionar }) {
         concluida: false,
       });
       setTexto("");
+      setErro(false);
+    } else {
+      setErro(true);
     }
   };
 
@@ -33,7 +37,6 @@ export default function NovaTarefa({ onAdicionar }) {
       <Botao onClick={adicionar}>
           Adicionar
       </Botao>
-      </div>
       {erro && (
         <div style={{ color: "red", fontSize: "12px" }}>
           O nome do painel não pode estar vazio.
