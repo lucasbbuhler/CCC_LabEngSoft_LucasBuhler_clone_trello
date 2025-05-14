@@ -20,6 +20,7 @@ export default function NovaTarefa({ onAdicionar }) {
   };
 
   return (
+    <div>
     <div style={{ display: "flex", gap: "6px" }}>
       <input
         value={texto}
@@ -37,6 +38,7 @@ export default function NovaTarefa({ onAdicionar }) {
       <Botao onClick={adicionar}>
           Adicionar
       </Botao>
+      </div>
       {erro && (
         <div style={{ color: "red", fontSize: "12px" }}>
           O nome do painel não pode estar vazio.
