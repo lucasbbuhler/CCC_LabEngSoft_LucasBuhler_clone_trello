@@ -1,24 +1,36 @@
-# Logs
-logs
+# 🔒 Arquivos sensíveis
+.env
+.env.*  # para caso use .env.development etc.
+
+# 📦 Node.js (backend)
+backend/node_modules/
+backend/package-lock.json
+backend/.DS_Store
+backend/dist/
+backend/uploads/
+
+# 🧱 React (frontend)
+frontend/node_modules/
+frontend/.DS_Store
+frontend/build/
+frontend/dist/
+frontend/.env
+
+# 🧪 Logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# 💻 Sistema
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+Thumbs.db
+
+# ⚙️ Editor
+.vscode/
+.idea/
+*.swp
+
+# 🚀 Deploy (caso use)
+*.tgz
+*.zip
