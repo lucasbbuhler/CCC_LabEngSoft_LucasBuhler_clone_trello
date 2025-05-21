@@ -1,14 +1,31 @@
-import { Routes, Route } from 'react-router-dom';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Painel from './pages/Painel';
+import { Routes, Route } from "react-router-dom";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Home from "./pages/Home";
+import Painel from "./pages/Painel";
+import RotaPrivada from "./routes/RotaPrivada";
 
 function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route path="/painel" element={<Painel />} />
+      <Route
+        path="/"
+        element={
+          <RotaPrivada>
+            <Home />
+          </RotaPrivada>
+        }
+      />
+      <Route
+        path="/painel/:id"
+        element={
+          <RotaPrivada>
+            <Painel />
+          </RotaPrivada>
+        }
+      />
     </Routes>
   );
 }

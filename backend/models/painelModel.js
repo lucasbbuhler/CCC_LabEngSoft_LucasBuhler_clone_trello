@@ -1,10 +1,5 @@
 const db = require("../db");
 
-exports.buscarTodos = async () => {
-  const result = await db.query("SELECT * FROM painel ORDER BY id");
-  return result.rows;
-};
-
 exports.buscarPorId = async (id) => {
   const result = await db.query("SELECT * FROM painel WHERE id = $1", [id]);
   return result.rows[0];
@@ -28,4 +23,15 @@ exports.atualizar = async (id, { titulo, descricao, publico }) => {
 
 exports.remover = async (id) => {
   await db.query("DELETE FROM painel WHERE id = $1", [id]);
+};
+
+exports.buscarPorUsuario = async (usuario_id) => {
+  const result = await db.query(
+    `SELECT p.*
+     FROM painel p
+     JOIN membros_painel m ON m.painel_id = p.id
+     WHERE m.usuario_id = $1`,
+    [usuario_id]
+  );
+  return result.rows;
 };

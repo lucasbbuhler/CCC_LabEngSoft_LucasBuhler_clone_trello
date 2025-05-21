@@ -2,7 +2,8 @@ import { Droppable } from "react-beautiful-dnd";
 import CardTarefas from "./CardTarefas";
 import NovaTarefa from "./NovaTarefa";
 import BotaoX from "./BotaoX";
-import { useState } from "react";
+import { useContext, useState } from "react";
+import { AuthContext } from "../context/AuthContext";
 
 export default function ListaTarefas({
   lista,
@@ -11,7 +12,9 @@ export default function ListaTarefas({
   onExcluirLista,
 }) {
   const [editandoTitulo, setEditandoTitulo] = useState(false);
+  const { token } = useContext(AuthContext);
   const [novoTitulo, setNovoTitulo] = useState(lista.titulo);
+
 
   const adicionarTarefa = (tarefa) => {
     const novaTarefa = {
@@ -26,13 +29,26 @@ export default function ListaTarefas({
     setListas(novasListas);
   };
 
-  const excluirTarefa = (tarefaId) => {
-    const novasListas = listas.map((l) =>
-      l.id === lista.id
-        ? { ...l, tarefas: l.tarefas.filter((t) => t.id !== tarefaId) }
-        : l
-    );
-    setListas(novasListas);
+  const excluirTarefa = async (tarefaId) => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/tarefas/${tarefaId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) throw new Error("Erro ao excluir tarefa");
+
+      const novasListas = listas.map((l) =>
+        l.id === lista.id
+          ? { ...l, tarefas: l.tarefas.filter((t) => t.id !== tarefaId) }
+          : l
+      );
+      setListas(novasListas);
+    } catch (err) {
+      console.error("Erro ao excluir tarefa:", err);
+    }
   };
 
   const editarTarefa = (tarefaId, novoTexto) => {
@@ -62,12 +78,35 @@ export default function ListaTarefas({
     setListas(novasListas);
   };
 
-  const editarTituloLista = () => {
+  const editarTituloLista = async () => {
+    setEditandoTitulo(false);
+
+    const tituloLimpo = novoTitulo.trim();
+
+    if (!tituloLimpo || tituloLimpo === lista.titulo) {
+      setNovoTitulo(lista.titulo);
+      return;
+    }
+  
+    try {
+      const res = await fetch(`http://localhost:3001/api/listas/${lista.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ titulo: tituloLimpo }),
+      });
+  
+      if (!res.ok) throw new Error("Erro ao atualizar título da lista");
+
     const atualizadas = listas.map((l) =>
-      l.id === lista.id ? { ...l, titulo: novoTitulo } : l
+      l.id === lista.id ? { ...l, titulo: tituloLimpo } : l
     );
     setListas(atualizadas);
-    setEditandoTitulo(false);
+  } catch (err) {
+    console.error("Erro ao editar título da lista:", err);
+  }
   };
 
   return (
@@ -130,7 +169,7 @@ export default function ListaTarefas({
       </div>
 
       <Droppable
-        droppableId={lista.id}
+        droppableId={String(lista.id)}
         type="TASK"
         direction="vertical"
         isDropDisabled={false}
@@ -160,7 +199,7 @@ export default function ListaTarefas({
       </Droppable>
 
       <div style={{ marginTop: 12 }}>
-        <NovaTarefa onAdicionar={adicionarTarefa} />
+        <NovaTarefa onAdicionar={adicionarTarefa} listaId={lista.id} />
       </div>
     </div>
   );

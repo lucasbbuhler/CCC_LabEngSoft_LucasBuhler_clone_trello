@@ -5,7 +5,7 @@ const auth = require("../middlewares/authMiddleware");
 
 router.use(auth);
 
-router.get("/", controller.getTodos);
+router.get("/", controller.listarPorUsuario);
 router.get("/:id", controller.getPorId);
 router.post("/", controller.criar);
 router.put("/:id", controller.atualizar);

@@ -1,34 +1,64 @@
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { useParams } from "react-router-dom";
 import ListaTarefas from "../components/ListaTarefas";
 import NovoPainel from "../components/NovoPainel";
-import { useState } from "react";
+import { useState, useEffect, useContext,  startTransition } from "react";
+import { AuthContext } from "../context/AuthContext";
 
 export default function Painel() {
-  const [listas, setListas] = useState([
-    {
-      id: "lista-1",
-      titulo: "A Fazer",
-      tarefas: [
-        { id: "tarefa-1", conteudo: "tarefa" },
-        { id: "tarefa-2", conteudo: "tarefa" },
-      ],
-    },
-    {
-      id: "lista-2",
-      titulo: "Em andamento",
-      tarefas: [
-        { id: "tarefa-3", conteudo: "tarefa" },
-        { id: "tarefa-4", conteudo: "tarefa" },
-      ],
-    },
-    {
-      id: "lista-3",
-      titulo: "Concluído",
-      tarefas: [
-        { id: "tarefa-5", conteudo: "tarefa" },
-      ],
-    },
-  ]);
+  const [listas, setListas] = useState([]);
+  const { token } = useContext(AuthContext);
+  const { id: painelId } = useParams();
+
+  useEffect(() => {
+    if (!painelId) return;
+    async function carregarListasETarefas() {
+      try {
+        const resListas = await fetch(
+          `http://localhost:3001/api/listas/painel/${painelId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        const listasJson = await resListas.json();
+
+        const listasComTarefas = await Promise.all(
+          listasJson.map(async (lista) => {
+            const resTarefas = await fetch(
+              "http://localhost:3001/api/tarefas",
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+
+            const tarefasJson = await resTarefas.json();
+            const tarefas = tarefasJson
+              .filter((t) => t.lista_id === lista.id)
+              .map((t) => ({
+                id: String(t.id),
+                conteudo: t.titulo,
+                descricao: t.descricao,
+                lista_id: t.lista_id,
+                concluida: t.concluida,
+              }));
+
+            return { ...lista, id: String(lista.id), tarefas };
+          })
+        );
+
+        setListas(listasComTarefas);
+      } catch (err) {
+        console.error("Erro ao carregar listas/tarefas:", err);
+      }
+    }
+
+    carregarListasETarefas();
+  }, [token]);
 
   const onDragEnd = (result) => {
     const { source, destination, type } = result;
@@ -63,7 +93,10 @@ export default function Painel() {
         i === sourceIndex ? { ...lista, tarefas: sourceTasks } : lista
       );
 
+      startTransition(() => {
       setListas([...novasListas]);
+      });
+
     } else {
       const destinationTasks = Array.from(destinationList.tarefas);
       destinationTasks.splice(destination.index, 0, tarefaMovida);
@@ -78,22 +111,44 @@ export default function Painel() {
         return lista;
       });
 
-      setListas([...novasListas]);
+      setListas(() => [...novasListas]);
+
+      fetch(`http://localhost:3001/api/tarefas/${tarefaMovida.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          titulo: tarefaMovida.conteudo,
+          lista_id: Number(destination.droppableId),
+        }),
+      }).catch((err) => {
+        console.error("Erro ao mover tarefa entre listas:", err);
+      });
     }
   };
 
-  const adicionarLista = (titulo) => {
-    const novaLista = {
-      id: `lista-${Date.now()}`,
-      titulo,
-      tarefas: [],
-    };
+  const adicionarLista = (novaLista) => {
     setListas([...listas, novaLista]);
   };
 
-  const excluirLista = (listaId) => {
-    const atualizadas = listas.filter((l) => l.id !== listaId);
-    setListas(atualizadas);
+  const excluirLista = async (listaId) => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/listas/${listaId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) throw new Error("Erro ao excluir lista");
+
+      const atualizadas = listas.filter((l) => l.id !== listaId);
+      setListas(atualizadas);
+    } catch (err) {
+      console.error("Erro ao excluir lista:", err);
+    }
   };
 
   return (
@@ -108,7 +163,7 @@ export default function Painel() {
       <h1 style={{ marginBottom: "1rem", fontSize: "24px", color: "#333" }}>
         Painel de Tarefas
       </h1>
-      <NovoPainel onAdicionar={adicionarLista} />
+      <NovoPainel onAdicionar={adicionarLista} painelId={Number(painelId)} />
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable
           droppableId="painel"
@@ -130,7 +185,11 @@ export default function Painel() {
               }}
             >
               {listas.map((lista, index) => (
-                <Draggable key={lista.id} draggableId={lista.id} index={index}>
+                <Draggable
+                  key={String(lista.id)}
+                  draggableId={String(lista.id)}
+                  index={index}
+                >
                   {(provided) => (
                     <div
                       ref={provided.innerRef}

@@ -20,7 +20,14 @@ exports.buscarPorId = async (id) => {
   return result.rows[0];
 };
 
-exports.atualizar = async (id, { titulo, descricao, lista_id }) => {
+exports.atualizar = async (id, campos ) => {
+  const atual = await exports.buscarPorId(id);
+  if (!atual) return null;
+
+  const titulo = campos.titulo ?? atual.titulo;
+  const descricao = campos.descricao ?? atual.descricao;
+  const lista_id = campos.lista_id ?? atual.lista_id;
+
   const result = await db.query(
     "UPDATE tarefas SET titulo = $1, descricao = $2, lista_id = $3 WHERE id = $4 RETURNING *",
     [titulo, descricao, lista_id, id]
