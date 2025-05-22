@@ -11,13 +11,13 @@ exports.buscarPorId = async (id) => {
 };
 
 exports.buscarPorPainel = async (painel_id) => {
-  const result = await db.query("SELECT * FROM listas WHERE painel_id = $1 ORDER BY id", [painel_id]);
+  const result = await db.query("SELECT * FROM listas WHERE painel_id = $1 ORDER BY posicao ASC", [painel_id]);
   return result.rows;
 };
 
-exports.inserir = async ({ titulo, painel_id }) => {
+exports.inserir = async ({ titulo, painel_id, posicao = 0 }) => {
   const result = await db.query(
-    "INSERT INTO listas (titulo, painel_id) VALUES ($1, $2) RETURNING *",
+    "INSERT INTO listas (titulo, painel_id, posicao) VALUES ($1, $2, $3) RETURNING *",
     [titulo, painel_id]
   );
   return result.rows[0];
@@ -33,4 +33,12 @@ exports.atualizar = async (id, { titulo }) => {
 
 exports.remover = async (id) => {
   await db.query("DELETE FROM listas WHERE id = $1", [id]);
+};
+
+exports.atualizarPosicao = async (id, novaPosicao) => {
+  const result = await db.query(
+    "UPDATE listas SET posicao = $1 WHERE id = $2 RETURNING *",
+    [novaPosicao, id]
+  );
+  return result.rows[0];
 };

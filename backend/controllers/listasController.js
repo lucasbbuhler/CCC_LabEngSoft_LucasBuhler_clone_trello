@@ -48,9 +48,16 @@ exports.criar = async (req, res) => {
 
 exports.atualizar = async (req, res) => {
   try {
+    const lista = await model.buscarPorId(req.params.id);
+    if (!lista) return res.status(404).json({ erro: "Lista não encontrada" });
+  
+    const painel = await require("../models/painelModel").buscarPorId(lista.painel_id);
+    if (!painel || painel.criado_por !== req.usuario.id) {
+      return res.status(403).json({ erro: "Você não tem permissão para editar esta lista." });
+    }
+  
     const { titulo } = req.body;
     const atualizada = await model.atualizar(req.params.id, { titulo });
-    if (!atualizada) return res.status(404).json({ erro: "Lista não encontrada" });
     res.json(atualizada);
   } catch (err) {
     console.error(err);
@@ -60,10 +67,41 @@ exports.atualizar = async (req, res) => {
 
 exports.remover = async (req, res) => {
   try {
+    const lista = await model.buscarPorId(req.params.id);
+    if (!lista) return res.status(404).json({ erro: "Lista não encontrada" });
+  
+    const painel = await require("../models/painelModel").buscarPorId(lista.painel_id);
+    if (!painel || painel.criado_por !== req.usuario.id) {
+      return res.status(403).json({ erro: "Você não tem permissão para remover esta lista." });
+    }
+  
     await model.remover(req.params.id);
     res.status(204).send();
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: "Erro ao remover lista" });
+  }  
+};
+
+exports.atualizarPosicao = async (req, res) => {
+  try {
+    const lista = await model.buscarPorId(req.params.id);
+    if (!lista) return res.status(404).json({ erro: "Lista não encontrada" });
+
+    const painel = await require("../models/painelModel").buscarPorId(lista.painel_id);
+    if (!painel || painel.criado_por !== req.usuario.id) {
+      return res.status(403).json({ erro: "Você não tem permissão para reordenar esta lista." });
+    }
+
+    const { posicao } = req.body;
+    if (typeof posicao !== "number") {
+      return res.status(400).json({ erro: "A posição deve ser um número." });
+    }
+
+    const atualizada = await model.atualizarPosicao(req.params.id, posicao);
+    res.json(atualizada);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao atualizar posição da lista." });
   }
 };

@@ -18,7 +18,12 @@ exports.criarTarefa = async (req, res) => {
       return res.status(400).json({ erro: "Campos obrigatórios ausentes" });
     }
 
-    const novaTarefa = await model.inserir({ titulo, descricao, lista_id, criado_por });
+    const novaTarefa = await model.inserir({
+      titulo,
+      descricao,
+      lista_id,
+      criado_por,
+    });
     res.status(201).json(novaTarefa);
   } catch (err) {
     console.error(err);
@@ -39,9 +44,21 @@ exports.getTarefaPorId = async (req, res) => {
 
 exports.atualizarTarefa = async (req, res) => {
   try {
+    if (!atualizada)
+      return res.status(404).json({ erro: "Tarefa não encontrada" });
+
+    if (tarefa.criado_por !== req.usuario.id) {
+      return res
+        .status(403)
+        .json({ erro: "Você não tem permissão para editar esta tarefa." });
+    }
+
     const { titulo, descricao, lista_id } = req.body;
-    const atualizada = await model.atualizar(req.params.id, { titulo, descricao, lista_id });
-    if (!atualizada) return res.status(404).json({ erro: "Tarefa não encontrada" });
+    const atualizada = await model.atualizar(req.params.id, {
+      titulo,
+      descricao,
+      lista_id,
+    });
     res.json(atualizada);
   } catch (err) {
     console.error(err);
@@ -51,9 +68,17 @@ exports.atualizarTarefa = async (req, res) => {
 
 exports.concluirTarefa = async (req, res) => {
   try {
+    const tarefa = await model.buscarPorId(req.params.id);
+    if (!tarefa) return res.status(404).json({ erro: "Tarefa não encontrada" });
+
+    if (tarefa.criado_por !== req.usuario.id) {
+      return res
+        .status(403)
+        .json({ erro: "Você não tem permissão para alterar esta tarefa." });
+    }
+
     const { concluida } = req.body;
     const atualizada = await model.marcarConcluida(req.params.id, concluida);
-    if (!atualizada) return res.status(404).json({ erro: "Tarefa não encontrada" });
     res.json(atualizada);
   } catch (err) {
     console.error(err);
@@ -63,10 +88,52 @@ exports.concluirTarefa = async (req, res) => {
 
 exports.removerTarefa = async (req, res) => {
   try {
+    const tarefa = await model.buscarPorId(req.params.id);
+    if (!tarefa) return res.status(404).json({ erro: "Tarefa não encontrada" });
+
+    if (tarefa.criado_por !== req.usuario.id) {
+      return res
+        .status(403)
+        .json({ erro: "Você não tem permissão para remover esta tarefa." });
+    }
+
     await model.remover(req.params.id);
     res.status(204).send();
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: "Erro ao remover tarefa" });
+  }
+};
+
+exports.getTarefasPorLista = async (req, res) => {
+  try {
+    const lista_id = req.params.lista_id;
+    const tarefas = await model.buscarPorLista(lista_id);
+    res.json(tarefas);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao buscar tarefas da lista" });
+  }
+};
+
+exports.atualizarPosicao = async (req, res) => {
+  try {
+    const tarefa = await model.buscarPorId(req.params.id);
+    if (!tarefa) return res.status(404).json({ erro: "Tarefa não encontrada" });
+
+    if (tarefa.criado_por !== req.usuario.id) {
+      return res.status(403).json({ erro: "Você não tem permissão para reordenar esta tarefa." });
+    }
+
+    const { posicao } = req.body;
+    if (typeof posicao !== "number") {
+      return res.status(400).json({ erro: "A posição deve ser um número." });
+    }
+
+    const atualizada = await model.atualizarPosicao(req.params.id, posicao);
+    res.json(atualizada);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao atualizar posição da tarefa." });
   }
 };

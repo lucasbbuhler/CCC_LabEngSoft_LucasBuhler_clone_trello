@@ -9,8 +9,8 @@ exports.buscarTodas = async () => {
 
 exports.inserir = async ({ titulo, descricao, lista_id, criado_por }) => {
   const result = await db.query(
-    "INSERT INTO tarefas (titulo, descricao, lista_id, criado_por) VALUES ($1, $2, $3, $4) RETURNING *",
-    [titulo, descricao, lista_id, criado_por]
+    "INSERT INTO tarefas (titulo, descricao, lista_id, criado_por, posicao) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+    [titulo, descricao, lista_id, criado_por, posicao]
   );
   return result.rows[0];
 };
@@ -45,4 +45,20 @@ exports.marcarConcluida = async (id, status) => {
 
 exports.remover = async (id) => {
   await db.query("DELETE FROM tarefas WHERE id = $1", [id]);
+};
+
+exports.buscarPorLista = async (lista_id) => {
+  const result = await db.query(
+    "SELECT * FROM tarefas WHERE lista_id = $1 ORDER BY posicao ASC",
+    [lista_id]
+  );
+  return result.rows;
+};
+
+exports.atualizarPosicao = async (id, novaPosicao) => {
+  const result = await db.query(
+    "UPDATE tarefas SET posicao = $1 WHERE id = $2 RETURNING *",
+    [novaPosicao, id]
+  );
+  return result.rows[0];
 };

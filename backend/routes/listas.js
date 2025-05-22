@@ -11,5 +11,6 @@ router.get("/painel/:painel_id", controller.getPorPainel);
 router.post("/", controller.criar);
 router.put("/:id", controller.atualizar);
 router.delete("/:id", controller.remover);
+router.patch("/:id/posicao", controller.atualizarPosicao);
 
 module.exports = router;
