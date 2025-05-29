@@ -2,13 +2,123 @@ import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { useParams } from "react-router-dom";
 import ListaTarefas from "../components/ListaTarefas";
 import NovoPainel from "../components/NovoPainel";
-import { useState, useEffect, useContext,  startTransition } from "react";
+import Navbar from "../components/Navbar";
+import { useState, useEffect, useContext, startTransition } from "react";
 import { AuthContext } from "../context/AuthContext";
 
 export default function Painel() {
   const [listas, setListas] = useState([]);
   const { token } = useContext(AuthContext);
   const { id: painelId } = useParams();
+
+  const handleReorderListas = (source, destination) => {
+    const novasListas = Array.from(listas);
+    const [removida] = novasListas.splice(source.index, 1);
+    novasListas.splice(destination.index, 0, removida);
+
+    setListas(novasListas);
+
+    novasListas.forEach((lista, index) => {
+      fetch(`http://localhost:3001/api/listas/${lista.id}/posicao`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ posicao: index }),
+      }).catch((err) =>
+        console.error(`Erro ao atualizar posição da lista ${lista.id}:`, err)
+      );
+    });
+  };
+
+  const handleMoveTarefaMesmaLista = (sourceIndex, source, destination) => {
+    const sourceList = listas[sourceIndex];
+    const sourceTasks = Array.from(sourceList.tarefas);
+    const tarefaMovida = { ...sourceTasks[source.index] };
+
+    sourceTasks.splice(source.index, 1);
+    sourceTasks.splice(destination.index, 0, tarefaMovida);
+
+    sourceTasks.forEach((tarefa, index) => {
+      fetch(`http://localhost:3001/api/tarefas/${tarefa.id}/posicao`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ posicao: index }),
+      });
+    });
+
+    const novasListas = listas.map((lista, i) =>
+      i === sourceIndex ? { ...lista, tarefas: sourceTasks } : lista
+    );
+
+    startTransition(() => {
+      setListas(novasListas);
+    });
+  };
+
+  const handleMoveTarefaEntreListas = (
+    sourceIndex,
+    destinationIndex,
+    source,
+    destination
+  ) => {
+    const sourceList = listas[sourceIndex];
+    const destinationList = listas[destinationIndex];
+
+    const sourceTasks = Array.from(sourceList.tarefas);
+    const destinationTasks = Array.from(destinationList.tarefas);
+
+    const tarefaMovida = { ...sourceTasks[source.index] };
+    sourceTasks.splice(source.index, 1);
+    destinationTasks.splice(destination.index, 0, tarefaMovida);
+
+    fetch(`http://localhost:3001/api/tarefas/${tarefaMovida.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        titulo: tarefaMovida.conteudo,
+        lista_id: Number(destination.droppableId),
+      }),
+    });
+
+    sourceTasks.forEach((tarefa, index) => {
+      fetch(`http://localhost:3001/api/tarefas/${tarefa.id}/posicao`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ posicao: index }),
+      });
+    });
+
+    destinationTasks.forEach((tarefa, index) => {
+      fetch(`http://localhost:3001/api/tarefas/${tarefa.id}/posicao`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ posicao: index }),
+      });
+    });
+
+    const novasListas = listas.map((lista, i) => {
+      if (i === sourceIndex) return { ...lista, tarefas: sourceTasks };
+      if (i === destinationIndex)
+        return { ...lista, tarefas: destinationTasks };
+      return lista;
+    });
+
+    setListas([...novasListas]);
+  };
 
   useEffect(() => {
     if (!painelId) return;
@@ -65,10 +175,7 @@ export default function Painel() {
     if (!destination) return;
 
     if (type === "LIST") {
-      const novasListas = Array.from(listas);
-      const [removida] = novasListas.splice(source.index, 1);
-      novasListas.splice(destination.index, 0, removida);
-      setListas(novasListas);
+      handleReorderListas(source, destination);
       return;
     }
 
@@ -79,58 +186,27 @@ export default function Painel() {
 
     if (sourceIndex === -1 || destinationIndex === -1) return;
 
-    const sourceList = listas[sourceIndex];
-    const destinationList = listas[destinationIndex];
-
-    const sourceTasks = Array.from(sourceList.tarefas);
-    const tarefaMovida = { ...sourceTasks[source.index] };
-    sourceTasks.splice(source.index, 1);
-
     if (source.droppableId === destination.droppableId) {
-      sourceTasks.splice(destination.index, 0, tarefaMovida);
-
-      const novasListas = listas.map((lista, i) =>
-        i === sourceIndex ? { ...lista, tarefas: sourceTasks } : lista
-      );
-
-      startTransition(() => {
-      setListas([...novasListas]);
-      });
-
+      handleMoveTarefaMesmaLista(sourceIndex, source, destination);
     } else {
-      const destinationTasks = Array.from(destinationList.tarefas);
-      destinationTasks.splice(destination.index, 0, tarefaMovida);
-
-      const novasListas = listas.map((lista, i) => {
-        if (i === sourceIndex) {
-          return { ...lista, tarefas: sourceTasks };
-        }
-        if (i === destinationIndex) {
-          return { ...lista, tarefas: destinationTasks };
-        }
-        return lista;
-      });
-
-      setListas(() => [...novasListas]);
-
-      fetch(`http://localhost:3001/api/tarefas/${tarefaMovida.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          titulo: tarefaMovida.conteudo,
-          lista_id: Number(destination.droppableId),
-        }),
-      }).catch((err) => {
-        console.error("Erro ao mover tarefa entre listas:", err);
-      });
+      handleMoveTarefaEntreListas(
+        sourceIndex,
+        destinationIndex,
+        source,
+        destination
+      );
     }
   };
 
   const adicionarLista = (novaLista) => {
-    setListas([...listas, novaLista]);
+    setListas([
+      ...listas,
+      {
+        ...novaLista,
+        id: String(novaLista.id),
+        tarefas: [],
+      },
+    ]);
   };
 
   const excluirLista = async (listaId) => {
@@ -152,65 +228,72 @@ export default function Painel() {
   };
 
   return (
-    <div
-      style={{
-        padding: "2rem",
-        background: "#e9ecef",
-        minHeight: "100vh",
-        boxSizing: "border-box",
-      }}
-    >
-      <h1 style={{ marginBottom: "1rem", fontSize: "24px", color: "#333" }}>
-        Painel de Tarefas
-      </h1>
-      <NovoPainel onAdicionar={adicionarLista} painelId={Number(painelId)} />
-      <DragDropContext onDragEnd={onDragEnd}>
-        <Droppable
-          droppableId="painel"
-          direction="horizontal"
-          type="LIST"
-          isDropDisabled={false}
-          isCombineEnabled={false}
-          ignoreContainerClipping={false}
-        >
-          {(provided) => (
-            <div
-              ref={provided.innerRef}
-              {...provided.droppableProps}
-              style={{
-                display: "flex",
-                gap: "1rem",
-                marginTop: "1.5rem",
-                overflowX: "auto",
-              }}
-            >
-              {listas.map((lista, index) => (
-                <Draggable
-                  key={String(lista.id)}
-                  draggableId={String(lista.id)}
-                  index={index}
-                >
-                  {(provided) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      {...provided.dragHandleProps}
-                    >
-                      <ListaTarefas
-                        lista={lista}
-                        listas={listas}
-                        setListas={setListas}
-                        onExcluirLista={() => excluirLista(lista.id)}
-                      />
-                    </div>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
-    </div>
+    <>
+      <Navbar />
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          height: "100vh",
+          overflow: "hidden",
+          background: "#e9ecef",
+          boxSizing: "border-box",
+          padding: "1rem",
+          paddingTop: "70px"
+        }}
+      >
+        <h1 style={{ marginBottom: "1rem", fontSize: "24px", color: "#333" }}>
+          Painel de Tarefas
+        </h1>
+        <NovoPainel onAdicionar={adicionarLista} painelId={Number(painelId)} />
+        <DragDropContext onDragEnd={onDragEnd}>
+          <Droppable
+            droppableId="painel"
+            direction="horizontal"
+            type="LIST"
+            isDropDisabled={false}
+            isCombineEnabled={false}
+            ignoreContainerClipping={false}
+          >
+            {(provided) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                style={{
+                  display: "flex",
+                  gap: "1rem",
+                  marginTop: "1.5rem",
+                  overflowX: "auto",
+                }}
+              >
+                {listas.map((lista, index) => (
+                  <Draggable
+                    key={String(lista.id)}
+                    draggableId={`lista-${lista.id}`}
+                    index={index}
+                  >
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                      >
+                        <ListaTarefas
+                          lista={lista}
+                          listas={listas}
+                          setListas={setListas}
+                          onExcluirLista={() => excluirLista(lista.id)}
+                        />
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
+      </div>
+    </>
   );
 }

@@ -38,7 +38,7 @@ exports.criar = async (req, res) => {
     if (!titulo || !painel_id) {
       return res.status(400).json({ erro: "Campos obrigatórios ausentes" });
     }
-    const nova = await model.inserir({ titulo, painel_id });
+    const nova = await model.inserir({ titulo, painel_id, posicao: 0 });
     res.status(201).json(nova);
   } catch (err) {
     console.error(err);

@@ -18,7 +18,7 @@ exports.buscarPorPainel = async (painel_id) => {
 exports.inserir = async ({ titulo, painel_id, posicao = 0 }) => {
   const result = await db.query(
     "INSERT INTO listas (titulo, painel_id, posicao) VALUES ($1, $2, $3) RETURNING *",
-    [titulo, painel_id]
+    [titulo, painel_id, posicao]
   );
   return result.rows[0];
 };

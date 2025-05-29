@@ -187,6 +187,7 @@ export default function ListaTarefas({
                 key={tarefa.id}
                 tarefa={tarefa}
                 index={index}
+                lista={lista}
                 concluida={tarefa.concluida}
                 onExcluir={() => excluirTarefa(tarefa.id)}
                 onEditar={(novoTexto) => editarTarefa(tarefa.id, novoTexto)}

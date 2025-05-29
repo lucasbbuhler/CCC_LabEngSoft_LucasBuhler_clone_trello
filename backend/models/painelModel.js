@@ -27,10 +27,10 @@ exports.remover = async (id) => {
 
 exports.buscarPorUsuario = async (usuario_id) => {
   const result = await db.query(
-    `SELECT p.*
-     FROM painel p
-     JOIN membros_painel m ON m.painel_id = p.id
-     WHERE m.usuario_id = $1`,
+    `SELECT DISTINCT p.*
+    FROM painel p
+    LEFT JOIN membros_painel m ON m.painel_id = p.id
+    WHERE p.criado_por = $1 OR m.usuario_id = $1`,
     [usuario_id]
   );
   return result.rows;

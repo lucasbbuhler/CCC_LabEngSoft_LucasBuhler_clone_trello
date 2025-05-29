@@ -95,8 +95,8 @@ exports.remover = async (req, res) => {
 exports.listarPorUsuario = async (req, res) => {
   try {
     const usuario_id = req.usuario.id;
-    const painel = await model.buscarPorUsuario(usuario_id);
-    res.json(painel);
+    const paineis = await model.buscarPorUsuario(usuario_id);
+    res.json(paineis);
   } catch (err) {
     console.error(err);
     res.status(500).json({ erro: "Erro ao buscar painéis do usuário" });

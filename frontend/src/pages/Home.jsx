@@ -1,6 +1,7 @@
 import { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
+import Navbar from "../components/Navbar";
 import Botao from "../components/Botao";
 
 export default function Home() {
@@ -45,9 +46,10 @@ export default function Home() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ titulo: novoNome,
+        body: JSON.stringify({
+          titulo: novoNome,
           descricao: "",
-          publico: true
+          publico: true,
         }),
       });
 
@@ -62,49 +64,90 @@ export default function Home() {
   };
 
   return (
-    <div style={{ padding: "2rem" }}>
-      <h1 style={{ marginBottom: "1rem" }}>Meus Painéis</h1>
+    <>
+      <Navbar />
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          padding: "2rem",
+          minHeight: "100vh",
+          backgroundColor: "#f8f9fa",
+          paddingTop: "70px",
+          fontFamily: "Arial, sans-serif",
+        }}
+      >
+        <h1 style={{ marginBottom: "2rem", color: "#333" }}>Meus Painéis</h1>
 
-      <form onSubmit={criarPainel} style={{ marginBottom: "2rem" }}>
-        <input
-          type="text"
-          value={novoNome}
-          onChange={(e) => setNovoNome(e.target.value)}
-          placeholder="Nome do novo painel"
-          style={{
-            padding: "6px 10px",
-            borderRadius: "6px",
-            border: "1px solid #ccc",
-            fontSize: "14px",
-            marginRight: "0.5rem",
-            width: "250px",
-          }}
-        />
-        <Botao type="submit">Criar</Botao>
+        <form
+          onSubmit={criarPainel}
+          style={{ display: "flex", gap: "8px", marginBottom: "1.5rem" }}
+        >
+          <input
+            type="text"
+            value={novoNome}
+            onChange={(e) => setNovoNome(e.target.value)}
+            placeholder="Nome do novo painel"
+            style={{
+              flex: 1,
+              padding: "8px 12px",
+              borderRadius: "6px",
+              border: "1px solid #ccc",
+              fontSize: "14px",
+            }}
+          />
+          <Botao type="submit">Criar</Botao>
+        </form>
+
         {erro && (
-          <div style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
+          <div
+            style={{
+              color: "red",
+              fontSize: "13px",
+              marginTop: "-1rem",
+              marginBottom: "1.5rem",
+            }}
+          >
             Nome inválido.
           </div>
         )}
-      </form>
 
-      <ul style={{ listStyle: "none", padding: 0 }}>
-      {console.log("Paineis:", paineis)}
-        {paineis.map((painel) => (
-          <li key={painel.id} style={{ marginBottom: "8px" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+            gap: "1rem",
+            width: "100%",
+            maxWidth: "600px",
+          }}
+        >
+          {paineis.map((painel) => (
             <Link
+              key={painel.id}
               to={`/painel/${painel.id}`}
               style={{
+                display: "block",
+                backgroundColor: "#fff",
+                padding: "1rem",
+                borderRadius: "10px",
                 textDecoration: "none",
-                color: "#007bff",
-                fontSize: "16px",
+                color: "#333",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                transition: "transform 0.2s ease",
               }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.transform = "scale(1.02)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.transform = "scale(1.00)")
+              }
             >
-              {painel.titulo}
+              <h3 style={{ margin: 0, fontSize: "16px" }}>{painel.titulo}</h3>
             </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
+          ))}
+        </div>
+      </div>
+    </>
   );
 }

@@ -1,9 +1,11 @@
 import { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 
-export default function ModalTarefa({ tarefa, onClose }) {
+export default function ModalTarefa({ tarefa, onClose, onAtualizar }) {
   const { token } = useContext(AuthContext);
   const [descricao, setDescricao] = useState(tarefa.descricao || "");
+  const [titulo, setTitulo] = useState(tarefa.conteudo || "");
+  const [editandoTitulo, setEditandoTitulo] = useState(false);
   const [comentarios, setComentarios] = useState([]);
   const [novoComentario, setNovoComentario] = useState("");
   const [editandoDescricao, setEditandoDescricao] = useState(false);
@@ -11,9 +13,12 @@ export default function ModalTarefa({ tarefa, onClose }) {
   useEffect(() => {
     async function carregarComentarios() {
       try {
-        const res = await fetch(`http://localhost:3001/api/comentarios/tarefa/${tarefa.id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch(
+          `http://localhost:3001/api/comentarios/tarefa/${tarefa.id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         const data = await res.json();
         setComentarios(data);
       } catch (err) {
@@ -44,6 +49,32 @@ export default function ModalTarefa({ tarefa, onClose }) {
     }
   };
 
+  const salvarTitulo = async () => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/tarefas/${tarefa.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          titulo,
+          descricao,
+          lista_id: tarefa.lista_id,
+        }),
+      });
+  
+      if (!res.ok) throw new Error("Erro ao salvar título");
+  
+      const atualizado = await res.json();
+      if (onAtualizar) onAtualizar(atualizado.titulo);
+      setEditandoTitulo(false);
+      onClose();
+    } catch (err) {
+      console.error("Erro ao salvar título:", err);
+    }
+  };
+  
   const adicionarComentario = async () => {
     if (!novoComentario.trim()) return;
 
@@ -83,9 +114,37 @@ export default function ModalTarefa({ tarefa, onClose }) {
   return (
     <div style={estilos.overlay}>
       <div style={estilos.modal}>
-        <h2 style={{ fontSize: "20px", marginBottom: "12px", color: "#333" }}>
-          {tarefa.conteudo}
-        </h2>
+        {editandoTitulo ? (
+          <div style={{ marginBottom: "12px" }}>
+            <input
+              value={titulo}
+              onChange={(e) => setTitulo(e.target.value)}
+              style={{
+                width: "100%",
+                fontSize: "20px",
+                padding: "8px",
+                borderRadius: "8px",
+                border: "1px solid #ccc",
+                marginBottom: "6px",
+              }}
+            />
+            <button onClick={salvarTitulo} style={estilos.salvar}>
+              Salvar título
+            </button>
+          </div>
+        ) : (
+          <h2
+            style={{
+              fontSize: "20px",
+              marginBottom: "12px",
+              color: "#333",
+              cursor: "pointer",
+            }}
+            onClick={() => setEditandoTitulo(true)}
+          >
+            <span style={{ borderBottom: "2px dashed #03076b" }}>{titulo}</span>
+          </h2>
+        )}
 
         <label style={{ fontWeight: "bold" }}>Descrição:</label>
         {editandoDescricao ? (
@@ -101,8 +160,15 @@ export default function ModalTarefa({ tarefa, onClose }) {
             </button>
           </>
         ) : (
-          <div onClick={() => setEditandoDescricao(true)} style={estilos.descricaoBox}>
-            {descricao || <em style={{ color: "#888" }}>Clique para adicionar uma descrição</em>}
+          <div
+            onClick={() => setEditandoDescricao(true)}
+            style={estilos.descricaoBox}
+          >
+            {descricao || (
+              <em style={{ color: "#888" }}>
+                Clique para adicionar uma descrição
+              </em>
+            )}
           </div>
         )}
 
@@ -119,7 +185,12 @@ export default function ModalTarefa({ tarefa, onClose }) {
                   {new Date(c.criado_em).toLocaleString()}
                 </small>
               </div>
-              <button onClick={() => excluirComentario(c.id)} style={estilos.botaoX}>x</button>
+              <button
+                onClick={() => excluirComentario(c.id)}
+                style={estilos.botaoX}
+              >
+                x
+              </button>
             </li>
           ))}
         </ul>
@@ -132,7 +203,9 @@ export default function ModalTarefa({ tarefa, onClose }) {
           placeholder="Escreva um comentário e pressione Enter"
         />
 
-        <button onClick={onClose} style={estilos.fechar}>Fechar</button>
+        <button onClick={onClose} style={estilos.fechar}>
+          Fechar
+        </button>
       </div>
     </div>
   );
@@ -141,10 +214,14 @@ export default function ModalTarefa({ tarefa, onClose }) {
 const estilos = {
   overlay: {
     position: "fixed",
-    top: 0, left: 0,
-    width: "100%", height: "100%",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
     background: "rgba(0,0,0,0.6)",
-    display: "flex", justifyContent: "center", alignItems: "center",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
     zIndex: 1000,
   },
   modal: {

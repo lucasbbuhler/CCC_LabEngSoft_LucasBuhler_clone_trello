@@ -7,7 +7,7 @@ exports.buscarTodas = async () => {
   return result.rows;
 };
 
-exports.inserir = async ({ titulo, descricao, lista_id, criado_por }) => {
+exports.inserir = async ({ titulo, descricao, lista_id, criado_por, posicao = 0 }) => {
   const result = await db.query(
     "INSERT INTO tarefas (titulo, descricao, lista_id, criado_por, posicao) VALUES ($1, $2, $3, $4, $5) RETURNING *",
     [titulo, descricao, lista_id, criado_por, posicao]

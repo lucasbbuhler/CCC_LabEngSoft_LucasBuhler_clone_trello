@@ -25,3 +25,11 @@ exports.remover = async (usuario_id, painel_id) => {
     [usuario_id, painel_id]
   );
 };
+
+exports.verificarMembro = async (painel_id, usuario_id) => {
+  const result = await db.query(
+    "SELECT 1 FROM membros_painel WHERE painel_id = $1 AND usuario_id = $2",
+    [painel_id, usuario_id]
+  );
+  return result.rowCount > 0;
+};
