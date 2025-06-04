@@ -51,7 +51,7 @@ export default function NovoPainel({ onAdicionar, painelId }) {
         type="text"
         value={titulo}
         onChange={(e) => setTitulo(e.target.value)}
-        placeholder="Nome do novo painel"
+        placeholder="Nome da nova lista"
         style={{
           padding: "6px 10px",
           borderRadius: "6px",
@@ -61,10 +61,10 @@ export default function NovoPainel({ onAdicionar, painelId }) {
           width: "250px",
         }}
       />
-      <Botao type="submit">Criar painel</Botao>
+      <Botao type="submit">Criar Lista</Botao>
       {erro && (
         <div style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
-          O nome do painel não pode estar vazio.
+          O nome da lista não pode estar vazio.
         </div>
       )}
     </form>

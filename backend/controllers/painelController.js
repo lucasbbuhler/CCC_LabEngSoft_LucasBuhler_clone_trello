@@ -68,13 +68,21 @@ exports.criar = async (req, res) => {
 exports.atualizar = async (req, res) => {
   try {
     const { titulo, descricao, publico } = req.body;
-    const atualizado = await model.atualizar(req.params.id, {
-      titulo,
-      descricao,
-      publico,
-    });
-    if (!atualizado)
+
+    const painelAtual = await model.buscarPorId(req.params.id);
+    if (!painelAtual)
       return res.status(404).json({ erro: "Painel não encontrado" });
+
+    const novoTitulo = titulo ?? painelAtual.titulo;
+    const novaDescricao = descricao ?? painelAtual.descricao;
+    const novoPublico = publico ?? painelAtual.publico;
+
+    const atualizado = await model.atualizar(req.params.id, {
+      titulo: novoTitulo,
+      descricao: novaDescricao,
+      publico: novoPublico,
+    });
+
     res.json(atualizado);
   } catch (err) {
     console.error(err);

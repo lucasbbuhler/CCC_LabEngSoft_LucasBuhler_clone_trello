@@ -34,3 +34,8 @@ exports.atualizar = async (id, { nome, email, senha_hash }) => {
 exports.remover = async (id) => {
   await db.query("DELETE FROM usuarios WHERE id = $1", [id]);
 };
+
+exports.buscarPorEmail = async (email) => {
+  const res = await db.query("SELECT id, nome, email FROM usuarios WHERE email = $1", [email]);
+  return res.rows[0];
+};

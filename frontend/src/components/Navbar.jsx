@@ -1,12 +1,14 @@
-// src/components/Navbar.jsx
-import { useContext } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import { useState, useContext } from "react";
+import { useNavigate, useLocation, Link, useParams } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import CompartilharPainel from "./CompartilharPainel";
 
 export default function Navbar() {
   const { logout, usuario } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
+  const { id: painelId } = useParams();
+  const [mostrarCompartilhar, setMostrarCompartilhar] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -48,6 +50,33 @@ export default function Navbar() {
         </Link>
       )}
 
+      {painelId && (
+        <>
+          <button
+            onClick={() => setMostrarCompartilhar(true)}
+            style={{
+              backgroundColor: "#007bff",
+              color: "#fff",
+              border: "none",
+              borderRadius: "999px",
+              padding: "8px 16px",
+              marginRight: "15px",
+              cursor: "pointer",
+              fontWeight: "bold",
+            }}
+          >
+            Compartilhar
+          </button>
+
+          {mostrarCompartilhar && (
+            <CompartilharPainel
+              painelId={painelId}
+              onFechar={() => setMostrarCompartilhar(false)}
+            />
+          )}
+        </>
+      )}
+
       <button
         onClick={handleLogout}
         style={{
@@ -58,7 +87,7 @@ export default function Navbar() {
           borderRadius: "999px",
           cursor: "pointer",
           fontWeight: "bold",
-          marginRight: "50px"
+          marginRight: "50px",
         }}
       >
         Sair

@@ -8,7 +8,7 @@ export default function Home() {
   const [paineis, setPaineis] = useState([]);
   const [novoNome, setNovoNome] = useState("");
   const [erro, setErro] = useState(false);
-  const { token } = useContext(AuthContext);
+  const { token, usuario } = useContext(AuthContext);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -143,7 +143,26 @@ export default function Home() {
                 (e.currentTarget.style.transform = "scale(1.00)")
               }
             >
-              <h3 style={{ margin: 0, fontSize: "16px" }}>{painel.titulo}</h3>
+              <h3 style={{ margin: 0, fontSize: "16px" }}>
+                {painel.titulo}
+                {painel.criado_por !== usuario.id && (
+                  <span
+                    style={{
+                      display: "inline-block",
+                      marginLeft: "8px",
+                      backgroundColor: "#ffc107",
+                      color: "#000",
+                      fontSize: "11px",
+                      padding: "2px 6px",
+                      borderRadius: "6px",
+                      verticalAlign: "middle",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    compartilhado
+                  </span>
+                )}
+              </h3>
             </Link>
           ))}
         </div>

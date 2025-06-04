@@ -8,6 +8,8 @@ import { AuthContext } from "../context/AuthContext";
 
 export default function Painel() {
   const [listas, setListas] = useState([]);
+  const [tituloPainel, setTituloPainel] = useState("Painel de Tarefas");
+  const [editandoTituloPainel, setEditandoTituloPainel] = useState(false);
   const { token } = useContext(AuthContext);
   const { id: painelId } = useParams();
 
@@ -122,6 +124,23 @@ export default function Painel() {
 
   useEffect(() => {
     if (!painelId) return;
+    async function carregarTituloPainel() {
+      try {
+        const res = await fetch(
+          `http://localhost:3001/api/painel/${painelId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        const dados = await res.json();
+        setTituloPainel(dados.titulo);
+      } catch (err) {
+        console.error("Erro ao carregar título do painel:", err);
+      }
+    }
+
+    carregarTituloPainel();
+
     async function carregarListasETarefas() {
       try {
         const resListas = await fetch(
@@ -162,6 +181,20 @@ export default function Painel() {
         );
 
         setListas(listasComTarefas);
+
+        const resPainel = await fetch(
+          `http://localhost:3001/api/painel/${painelId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (resPainel.ok) {
+          const painelJson = await resPainel.json();
+          setTituloPainel(painelJson.titulo);
+        }
       } catch (err) {
         console.error("Erro ao carregar listas/tarefas:", err);
       }
@@ -227,6 +260,27 @@ export default function Painel() {
     }
   };
 
+  const editarTituloPainel = async () => {
+    setEditandoTituloPainel(false);
+    const tituloLimpo = tituloPainel.trim();
+    if (!tituloLimpo) return;
+
+    try {
+      const res = await fetch(`http://localhost:3001/api/painel/${painelId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ titulo: tituloLimpo }),
+      });
+
+      if (!res.ok) throw new Error("Erro ao atualizar título do painel");
+    } catch (err) {
+      console.error("Erro ao editar título do painel:", err);
+    }
+  };
+
   return (
     <>
       <Navbar />
@@ -239,12 +293,38 @@ export default function Painel() {
           background: "#e9ecef",
           boxSizing: "border-box",
           padding: "1rem",
-          paddingTop: "70px"
+          paddingTop: "70px",
         }}
       >
-        <h1 style={{ marginBottom: "1rem", fontSize: "24px", color: "#333" }}>
-          Painel de Tarefas
-        </h1>
+        {editandoTituloPainel ? (
+          <input
+            value={tituloPainel}
+            onChange={(e) => setTituloPainel(e.target.value)}
+            onBlur={editarTituloPainel}
+            autoFocus
+            style={{
+              fontSize: "24px",
+              padding: "4px 8px",
+              borderRadius: "6px",
+              border: "1px solid #ccc",
+              fontWeight: "bold",
+              marginBottom: "1rem",
+            }}
+          />
+        ) : (
+          <h1
+            style={{
+              marginBottom: "1rem",
+              fontSize: "24px",
+              color: "#333",
+              cursor: "pointer",
+            }}
+            onClick={() => setEditandoTituloPainel(true)}
+          >
+            {tituloPainel}
+          </h1>
+        )}
+
         <NovoPainel onAdicionar={adicionarLista} painelId={Number(painelId)} />
         <DragDropContext onDragEnd={onDragEnd}>
           <Droppable

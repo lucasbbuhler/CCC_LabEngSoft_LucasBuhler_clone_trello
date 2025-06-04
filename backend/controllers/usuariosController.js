@@ -47,3 +47,15 @@ exports.deletarUsuario = async (req, res) => {
     res.status(500).json({ erro: "Erro ao remover usuário" });
   }
 };
+
+exports.getUsuarioPorEmail = async (req, res) => {
+  try {
+    const usuario = await model.buscarPorEmail(req.params.email);
+    if (!usuario)
+      return res.status(404).json({ erro: "Usuário não encontrado" });
+    res.json(usuario);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: "Erro ao buscar usuário por email" });
+  }
+};
