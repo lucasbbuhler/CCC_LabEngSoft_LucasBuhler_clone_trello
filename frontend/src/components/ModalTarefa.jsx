@@ -1,5 +1,6 @@
 import { useEffect, useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
+import { registrarHistorico } from "../utils/historico";
 
 export default function ModalTarefa({ tarefa, onClose, onAtualizar }) {
   const { token } = useContext(AuthContext);
@@ -9,6 +10,12 @@ export default function ModalTarefa({ tarefa, onClose, onAtualizar }) {
   const [comentarios, setComentarios] = useState([]);
   const [novoComentario, setNovoComentario] = useState("");
   const [editandoDescricao, setEditandoDescricao] = useState(false);
+  const [historico, setHistorico] = useState([]);
+
+  useEffect(() => {
+    setDescricao(tarefa.descricao || "");
+    setTitulo(tarefa.conteudo || "");
+  }, [tarefa]);
 
   useEffect(() => {
     async function carregarComentarios() {
@@ -26,7 +33,23 @@ export default function ModalTarefa({ tarefa, onClose, onAtualizar }) {
       }
     }
 
+    async function carregarHistorico() {
+      try {
+        const res = await fetch(
+          `http://localhost:3001/api/historico/tarefa/${tarefa.id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        const data = await res.json();
+        setHistorico(data);
+      } catch (err) {
+        console.error("Erro ao carregar histórico:", err);
+      }
+    }
+
     carregarComentarios();
+    carregarHistorico();
   }, [tarefa.id, token]);
 
   const salvarDescricao = async () => {
@@ -43,6 +66,13 @@ export default function ModalTarefa({ tarefa, onClose, onAtualizar }) {
           lista_id: tarefa.lista_id,
         }),
       });
+
+      await registrarHistorico(
+        tarefa.id,
+        `Descrição atualizada para "${descricao}"`,
+        token
+      );
+
       setEditandoDescricao(false);
     } catch (err) {
       console.error("Erro ao salvar descrição:", err);
@@ -51,22 +81,32 @@ export default function ModalTarefa({ tarefa, onClose, onAtualizar }) {
 
   const salvarTitulo = async () => {
     try {
-      const res = await fetch(`http://localhost:3001/api/tarefas/${tarefa.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          titulo,
-          descricao,
-          lista_id: tarefa.lista_id,
-        }),
-      });
-  
+      const res = await fetch(
+        `http://localhost:3001/api/tarefas/${tarefa.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            titulo,
+            descricao,
+            lista_id: tarefa.lista_id,
+          }),
+        }
+      );
+
       if (!res.ok) throw new Error("Erro ao salvar título");
-  
+
       const atualizado = await res.json();
+
+      await registrarHistorico(
+        tarefa.id,
+        `Título atualizado para "${titulo}"`,
+        token
+      );
+
       if (onAtualizar) onAtualizar(atualizado.titulo);
       setEditandoTitulo(false);
       onClose();
@@ -74,7 +114,7 @@ export default function ModalTarefa({ tarefa, onClose, onAtualizar }) {
       console.error("Erro ao salvar título:", err);
     }
   };
-  
+
   const adicionarComentario = async () => {
     if (!novoComentario.trim()) return;
 
@@ -164,7 +204,9 @@ export default function ModalTarefa({ tarefa, onClose, onAtualizar }) {
             onClick={() => setEditandoDescricao(true)}
             style={estilos.descricaoBox}
           >
-            {descricao || (
+            {descricao.trim() ? (
+              <span>{descricao}</span>
+            ) : (
               <em style={{ color: "#888" }}>
                 Clique para adicionar uma descrição
               </em>
@@ -202,6 +244,21 @@ export default function ModalTarefa({ tarefa, onClose, onAtualizar }) {
           onKeyDown={(e) => e.key === "Enter" && adicionarComentario()}
           placeholder="Escreva um comentário e pressione Enter"
         />
+
+        <hr style={{ margin: "16px 0" }} />
+        <h3>Histórico de Alterações</h3>
+        <ul>
+          {historico.map((item) => (
+            <li key={item.id} style={{ marginBottom: "8px" }}>
+              <div style={{ fontSize: "14px", color: "#333" }}>
+                {item.descricao}
+              </div>
+              <small style={{ fontSize: "12px", color: "#777" }}>
+                {item.autor} – {new Date(item.alterado_em).toLocaleString()}
+              </small>
+            </li>
+          ))}
+        </ul>
 
         <button onClick={onClose} style={estilos.fechar}>
           Fechar

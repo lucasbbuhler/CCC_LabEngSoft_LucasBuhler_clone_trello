@@ -79,6 +79,11 @@ exports.remover = async (req, res) => {
     res.status(204).send();
   } catch (err) {
     console.error(err);
+    if (err.code === "23503") {
+      return res.status(400).json({
+        erro: "A lista não pode ser excluída porque ainda possui tarefas vinculadas.",
+      });
+    }
     res.status(500).json({ erro: "Erro ao remover lista" });
   }  
 };

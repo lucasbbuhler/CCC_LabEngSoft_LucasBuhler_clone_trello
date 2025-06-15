@@ -1,7 +1,6 @@
 const model = require("../models/painelModel");
 const membrosModel = require("../models/membrosPainelModel");
 
-
 exports.getPorId = async (req, res) => {
   try {
     const painel = await model.buscarPorId(req.params.id);
@@ -91,12 +90,18 @@ exports.atualizar = async (req, res) => {
 };
 
 exports.remover = async (req, res) => {
+  const { id } = req.params;
   try {
-    await model.remover(req.params.id);
+    await model.remover(id);
     res.status(204).send();
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ erro: "Erro ao remover painel" });
+    if (err.code === "23503") {
+      return res.status(400).json({
+        erro: "O painel não pode ser excluído porque ainda possui membros, listas ou tarefas vinculadas.",
+      });
+    }
+    console.error("Erro ao excluir painel:", err);
+    res.status(500).json({ erro: "Erro ao excluir painel." });
   }
 };
 

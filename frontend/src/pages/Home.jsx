@@ -3,6 +3,7 @@ import { AuthContext } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Botao from "../components/Botao";
+import BotaoX from "../components/BotaoX";
 
 export default function Home() {
   const [paineis, setPaineis] = useState([]);
@@ -62,6 +63,29 @@ export default function Home() {
       setErro(true);
     }
   };
+
+  const excluirPainel = async (painelId) => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/painel/${painelId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      if (!res.ok) {
+        const erroData = await res.json();
+        alert(erroData.erro || "Erro ao excluir painel.");
+        return;
+      }
+  
+      setPaineis(paineis.filter((p) => p.id !== painelId));
+    } catch (err) {
+      console.error("Erro ao excluir painel:", err);
+      alert("Erro inesperado ao excluir painel.");
+    }
+  };
+  
 
   return (
     <>
@@ -123,47 +147,72 @@ export default function Home() {
           }}
         >
           {paineis.map((painel) => (
-            <Link
+            <div
               key={painel.id}
-              to={`/painel/${painel.id}`}
               style={{
-                display: "block",
-                backgroundColor: "#fff",
-                padding: "1rem",
-                borderRadius: "10px",
-                textDecoration: "none",
-                color: "#333",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                transition: "transform 0.2s ease",
+                position: "relative",
               }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.transform = "scale(1.02)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.transform = "scale(1.00)")
-              }
             >
-              <h3 style={{ margin: 0, fontSize: "16px" }}>
-                {painel.titulo}
-                {painel.criado_por !== usuario.id && (
-                  <span
-                    style={{
-                      display: "inline-block",
-                      marginLeft: "8px",
-                      backgroundColor: "#ffc107",
-                      color: "#000",
-                      fontSize: "11px",
-                      padding: "2px 6px",
-                      borderRadius: "6px",
-                      verticalAlign: "middle",
-                      fontWeight: "bold",
-                    }}
-                  >
-                    compartilhado
-                  </span>
-                )}
-              </h3>
-            </Link>
+              <Link
+                to={`/painel/${painel.id}`}
+                style={{
+                  display: "block",
+                  backgroundColor: "#fff",
+                  padding: "1rem",
+                  borderRadius: "10px",
+                  textDecoration: "none",
+                  color: "#333",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                  transition: "transform 0.2s ease",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.transform = "scale(1.02)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.transform = "scale(1.00)")
+                }
+              >
+                <h3 style={{ margin: 0, fontSize: "16px" }}>
+                  {painel.titulo}
+                  {painel.criado_por !== usuario.id && (
+                    <span
+                      style={{
+                        display: "inline-block",
+                        marginLeft: "8px",
+                        backgroundColor: "#ffc107",
+                        color: "#000",
+                        fontSize: "11px",
+                        padding: "2px 6px",
+                        borderRadius: "6px",
+                        verticalAlign: "middle",
+                        fontWeight: "bold",
+                      }}
+                    >
+                      compartilhado
+                    </span>
+                  )}
+                </h3>
+              </Link>
+
+              {painel.criado_por === usuario.id && (
+                <BotaoX
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    const confirmado = window.confirm(
+                      "Deseja excluir este painel?"
+                    );
+                    if (confirmado) excluirPainel(painel.id);
+                  }}
+                  style={{
+                    position: "absolute",
+                    top: "10px",
+                    right: "10px",
+                  }}
+                  title="Excluir painel"
+                />
+              )}
+            </div>
           ))}
         </div>
       </div>

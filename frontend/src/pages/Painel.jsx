@@ -157,7 +157,7 @@ export default function Painel() {
         const listasComTarefas = await Promise.all(
           listasJson.map(async (lista) => {
             const resTarefas = await fetch(
-              "http://localhost:3001/api/tarefas",
+              `http://localhost:3001/api/tarefas/lista/${lista.id}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -180,7 +180,7 @@ export default function Painel() {
           })
         );
 
-        setListas(listasComTarefas);
+        setListas(listasComTarefas.sort((a, b) => a.posicao - b.posicao));
 
         const resPainel = await fetch(
           `http://localhost:3001/api/painel/${painelId}`,
@@ -251,7 +251,11 @@ export default function Painel() {
         },
       });
 
-      if (!res.ok) throw new Error("Erro ao excluir lista");
+      if (!res.ok) {
+        const erro = await res.json();
+        if (erro?.erro) alert(erro.erro);
+        throw new Error("Erro ao excluir lista");
+      }
 
       const atualizadas = listas.filter((l) => l.id !== listaId);
       setListas(atualizadas);

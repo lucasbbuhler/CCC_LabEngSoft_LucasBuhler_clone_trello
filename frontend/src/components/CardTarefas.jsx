@@ -3,6 +3,7 @@ import { Draggable } from "react-beautiful-dnd";
 import BotaoX from "./BotaoX";
 import ModalTarefa from "./ModalTarefa";
 import { AuthContext } from "../context/AuthContext";
+import { registrarHistorico } from "../utils/historico";
 
 function CardTarefas({
   tarefa,
@@ -42,6 +43,7 @@ function CardTarefas({
           })
             .then((res) => {
               if (!res.ok) throw new Error("Erro ao editar tarefa");
+              registrarHistorico(tarefa.id, `Título alterado para: "${textoLimpo}"`, token);
               onEditar(textoLimpo);
             })
             .catch((err) => {
