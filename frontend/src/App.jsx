@@ -3,6 +3,8 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Home from "./pages/Home";
 import Painel from "./pages/Painel";
+import EsqueciSenha from "./pages/EsqueciSenha";
+import ResetarSenha from "./pages/ResetarSenha";
 import RotaPrivada from "./routes/RotaPrivada";
 
 function App() {
@@ -10,6 +12,8 @@ function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+      <Route path="/resetar-senha/:token" element={<ResetarSenha />} />
       <Route
         path="/"
         element={

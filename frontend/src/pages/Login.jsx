@@ -133,6 +133,19 @@ export default function Login() {
           )}
         </form>
 
+        <p style={{ textAlign: "center", fontSize: "14px" }}>
+          <a
+            href="/esqueci-senha"
+            style={{
+              color: "#007bff",
+              textDecoration: "none",
+              fontWeight: "bold",
+            }}
+          >
+            Esqueceu a senha?
+          </a>
+        </p>
+
         <p style={{ marginTop: "1rem", fontSize: "14px", textAlign: "center" }}>
           Ainda não tem conta?{" "}
           <a

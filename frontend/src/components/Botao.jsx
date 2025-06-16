@@ -2,16 +2,19 @@ export default function Botao({
   children,
   onClick,
   type = "button",
+  loading = false,
+  disabled = false,
   ...props
 }) {
   const estilos = {
     base: {
-      padding: "6px 12px",
+      padding: "10px",
       border: "none",
-      borderRadius: "6px",
+      borderRadius: "999px",
       fontSize: "14px",
-      cursor: "pointer",
+      cursor: disabled || loading ? "not-allowed" : "pointer",
       transition: "0.2s",
+      opacity: disabled || loading ? 0.6 : 1,
     },
     primaria: {
       backgroundColor: "#007bff",
@@ -30,8 +33,14 @@ export default function Botao({
   };
 
   return (
-    <button type={type} onClick={onClick} style={estiloFinal} {...props}>
-      {children}
+    <button
+      type={type}
+      onClick={onClick}
+      style={estiloFinal}
+      disabled={disabled || loading}
+      {...props}
+    >
+      {loading ? "Enviando..." : children}
     </button>
   );
 }
