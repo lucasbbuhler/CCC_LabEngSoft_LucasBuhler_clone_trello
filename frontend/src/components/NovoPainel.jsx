@@ -64,7 +64,7 @@ export default function NovoPainel({ onAdicionar, painelId }) {
       <Botao type="submit">Criar Lista</Botao>
       {erro && (
         <div style={{ color: "red", fontSize: "12px", marginTop: "4px" }}>
-          O nome da lista não pode estar vazio.
+          Não é possivel criar a lista.
         </div>
       )}
     </form>

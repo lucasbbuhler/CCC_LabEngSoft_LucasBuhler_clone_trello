@@ -5,7 +5,10 @@ import { AuthContext } from "../context/AuthContext";
 export default function CompartilharPainel({ painelId, onFechar }) {
   const { token } = useContext(AuthContext);
   const [email, setEmail] = useState("");
+  const [papel, setPapel] = useState("membro");
   const [membros, setMembros] = useState([]);
+  const [isCriador, setIsCriador] = useState(false);
+  const [isEditor, setIsEditor] = useState(false);
   const [erro, setErro] = useState("");
   const navigate = useNavigate();
 
@@ -20,11 +23,49 @@ export default function CompartilharPainel({ painelId, onFechar }) {
         );
         const dados = await res.json();
         setMembros(dados);
+
+        const usuarioLocal = JSON.parse(localStorage.getItem("usuario"));
+        const membroAtual = dados.find((m) => m.email === usuarioLocal.email);
+    
+        if (membroAtual && membroAtual.papel === "editor") {
+          setIsEditor(true);
+        } else {
+          setIsEditor(false);
+        }
+        
       } catch (err) {
         console.error("Erro ao carregar membros:", err);
       }
     }
+
+    async function verificarSeCriador() {
+      try {
+        const res = await fetch(
+          `http://localhost:3001/api/painel/${painelId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        const texto = await res.text();
+        try {
+          const dados = JSON.parse(texto);
+          const usuarioLocal = JSON.parse(localStorage.getItem("usuario"));
+          const ehCriador =
+            usuarioLocal && dados.criado_por === usuarioLocal.id;
+          setIsCriador(ehCriador);
+        } catch (jsonErr) {
+          console.error("Resposta inválida:", texto);
+          setIsCriador(false);
+        }
+      } catch (err) {
+        console.error("Erro ao verificar criador:", err);
+        setIsCriador(false);
+      }
+    }
+
     carregarMembros();
+    verificarSeCriador();
   }, [painelId, token]);
 
   const compartilhar = async () => {
@@ -53,7 +94,7 @@ export default function CompartilharPainel({ painelId, onFechar }) {
         body: JSON.stringify({
           usuario_id: usuario.id,
           painel_id: painelId,
-          papel: "membro", // fixo por ora
+          papel: papel,
         }),
       });
 
@@ -77,6 +118,35 @@ export default function CompartilharPainel({ painelId, onFechar }) {
       setMembros((m) => m.filter((m) => m.usuario_id !== id));
     } catch (err) {
       console.error("Erro ao remover membro:", err);
+    }
+  };
+
+  const atualizarPapel = async (usuarioId, novoPapel) => {
+    try {
+      const res = await fetch("http://localhost:3001/api/membros", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          usuario_id: usuarioId,
+          painel_id: painelId,
+          papel: novoPapel,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Erro ao atualizar papel");
+
+      setMembros((m) =>
+        m.map((membro) =>
+          membro.usuario_id === usuarioId
+            ? { ...membro, papel: novoPapel }
+            : membro
+        )
+      );
+    } catch (err) {
+      console.error("Erro ao atualizar papel:", err);
     }
   };
 
@@ -106,52 +176,72 @@ export default function CompartilharPainel({ painelId, onFechar }) {
         Compartilhar Painel
       </h2>
 
-      <div style={{ marginBottom: "1rem" }}>
-        <label
-          htmlFor="email"
-          style={{ fontWeight: "bold", fontSize: "14px", color: "#000" }}
-        >
-          E-mail do usuário
-        </label>
-        <input
-          id="email"
-          type="email"
-          placeholder="Digite o e-mail"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "10px",
-            borderRadius: "8px",
-            border: "1px solid #ccc",
-            marginTop: "6px",
-          }}
-        />
-      </div>
+      {(isCriador || isEditor) && (
+        <>
+          <div style={{ marginBottom: "1rem" }}>
+            <label htmlFor="email">E-mail do usuário</label>
+            <input
+              id="email"
+              type="email"
+              placeholder="Digite o e-mail"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "10px",
+                borderRadius: "8px",
+                border: "1px solid #ccc",
+                marginTop: "6px",
+              }}
+            />
+          </div>
 
-      <button
-        onClick={compartilhar}
-        style={{
-          backgroundColor: "#007bff",
-          color: "#fff",
-          border: "none",
-          padding: "10px",
-          borderRadius: "999px",
-          cursor: "pointer",
-          width: "100%",
-          fontWeight: "bold",
-          marginBottom: "1rem",
-        }}
-      >
-        Adicionar membro
-      </button>
+          <div style={{ marginBottom: "1rem" }}>
+            <label htmlFor="papel">Papel</label>
+            <select
+              id="papel"
+              value={papel}
+              onChange={(e) => setPapel(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "10px",
+                borderRadius: "8px",
+                border: "1px solid #ccc",
+                marginTop: "6px",
+              }}
+            >
+              <option value="membro">Membro</option>
+              <option value="editor">Editor</option>
+            </select>
+          </div>
 
-      {erro && (
-        <div style={{ color: "red", fontSize: "13px", marginBottom: "1rem" }}>
-          {erro}
-        </div>
+          <button
+            onClick={compartilhar}
+            style={{
+              backgroundColor: "#007bff",
+              color: "#fff",
+              border: "none",
+              padding: "10px",
+              borderRadius: "999px",
+              cursor: "pointer",
+              width: "100%",
+              fontWeight: "bold",
+              marginBottom: "1rem",
+            }}
+          >
+            Adicionar membro
+          </button>
+
+          {erro && (
+            <div
+              style={{ color: "red", fontSize: "13px", marginBottom: "1rem" }}
+            >
+              {erro}
+            </div>
+          )}
+        </>
       )}
-
+      
       <h4 style={{ marginBottom: "0.5rem", fontWeight: "bold", color: "#000" }}>
         Membros atuais
       </h4>
@@ -176,22 +266,47 @@ export default function CompartilharPainel({ painelId, onFechar }) {
               color: "#000",
             }}
           >
-            <span>{m.nome || m.email}</span>
-            <button
-              onClick={() => {
-                remover(m.usuario_id);
-                navigate("/");
-              }}
-              style={{
-                background: "transparent",
-                color: "red",
-                border: "none",
-                cursor: "pointer",
-                fontWeight: "bold",
-              }}
-            >
-              remover
-            </button>
+            <span>
+              {m.email}{" "}
+              <span
+                style={{ fontSize: "12px", color: "#555", marginLeft: "6px" }}
+              >
+                ({m.papel})
+              </span>
+            </span>
+            {isCriador && (
+              <select
+                value={m.papel}
+                onChange={(e) => atualizarPapel(m.usuario_id, e.target.value)}
+                style={{
+                  borderRadius: "6px",
+                  padding: "4px",
+                  fontSize: "12px",
+                  marginLeft: "10px",
+                }}
+              >
+                <option value="membro">Membro</option>
+                <option value="editor">Editor</option>
+              </select>
+            )}
+
+            {isCriador && (
+              <button
+                onClick={() => {
+                  remover(m.usuario_id);
+                  navigate("/");
+                }}
+                style={{
+                  background: "transparent",
+                  color: "red",
+                  border: "none",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                }}
+              >
+                remover
+              </button>
+            )}
           </li>
         ))}
       </ul>

@@ -1,4 +1,5 @@
 const model = require("../models/listasModel");
+const { verificarPermissao } = require("../utils/permissoes");
 
 exports.getTodas = async (req, res) => {
   try {
@@ -34,10 +35,19 @@ exports.getPorPainel = async (req, res) => {
 exports.criar = async (req, res) => {
   try {
     const { titulo, painel_id } = req.body;
-    const criado_por = req.usuario.id;
     if (!titulo || !painel_id) {
       return res.status(400).json({ erro: "Campos obrigatórios ausentes" });
     }
+    const temPermissao = await verificarPermissao(painel_id, req.usuario.id, [
+      "admin",
+      "editor",
+    ]);
+    if (!temPermissao) {
+      return res.status(403).json({
+        erro: "Você não tem permissão para criar listas neste painel.",
+      });
+    }
+
     const nova = await model.inserir({ titulo, painel_id, posicao: 0 });
     res.status(201).json(nova);
   } catch (err) {
@@ -50,12 +60,18 @@ exports.atualizar = async (req, res) => {
   try {
     const lista = await model.buscarPorId(req.params.id);
     if (!lista) return res.status(404).json({ erro: "Lista não encontrada" });
-  
-    const painel = await require("../models/painelModel").buscarPorId(lista.painel_id);
-    if (!painel || painel.criado_por !== req.usuario.id) {
-      return res.status(403).json({ erro: "Você não tem permissão para editar esta lista." });
+
+    const temPermissao = await verificarPermissao(
+      lista.painel_id,
+      req.usuario.id,
+      ["admin", "editor"]
+    );
+    if (!temPermissao) {
+      return res
+        .status(403)
+        .json({ erro: "Você não tem permissão para editar esta lista." });
     }
-  
+
     const { titulo } = req.body;
     const atualizada = await model.atualizar(req.params.id, { titulo });
     res.json(atualizada);
@@ -69,12 +85,18 @@ exports.remover = async (req, res) => {
   try {
     const lista = await model.buscarPorId(req.params.id);
     if (!lista) return res.status(404).json({ erro: "Lista não encontrada" });
-  
-    const painel = await require("../models/painelModel").buscarPorId(lista.painel_id);
-    if (!painel || painel.criado_por !== req.usuario.id) {
-      return res.status(403).json({ erro: "Você não tem permissão para remover esta lista." });
+
+    const temPermissao = await verificarPermissao(
+      lista.painel_id,
+      req.usuario.id,
+      ["admin", "editor"]
+    );
+    if (!temPermissao) {
+      return res
+        .status(403)
+        .json({ erro: "Você não tem permissão para remover esta lista." });
     }
-  
+
     await model.remover(req.params.id);
     res.status(204).send();
   } catch (err) {
@@ -85,7 +107,7 @@ exports.remover = async (req, res) => {
       });
     }
     res.status(500).json({ erro: "Erro ao remover lista" });
-  }  
+  }
 };
 
 exports.atualizarPosicao = async (req, res) => {
@@ -93,9 +115,15 @@ exports.atualizarPosicao = async (req, res) => {
     const lista = await model.buscarPorId(req.params.id);
     if (!lista) return res.status(404).json({ erro: "Lista não encontrada" });
 
-    const painel = await require("../models/painelModel").buscarPorId(lista.painel_id);
-    if (!painel || painel.criado_por !== req.usuario.id) {
-      return res.status(403).json({ erro: "Você não tem permissão para reordenar esta lista." });
+    const temPermissao = await verificarPermissao(
+      lista.painel_id,
+      req.usuario.id,
+      ["admin", "editor"]
+    );
+    if (!temPermissao) {
+      return res
+        .status(403)
+        .json({ erro: "Você não tem permissão para reordenar esta lista." });
     }
 
     const { posicao } = req.body;

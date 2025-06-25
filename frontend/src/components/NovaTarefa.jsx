@@ -66,7 +66,7 @@ export default function NovaTarefa({ onAdicionar, listaId }) {
       </div>
       {erro && (
         <div style={{ color: "red", fontSize: "12px" }}>
-          O nome do painel não pode estar vazio.
+         Não é possivel incluir a tarefa.
         </div>
       )}
     </div>

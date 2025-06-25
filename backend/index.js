@@ -17,7 +17,6 @@ app.use("/api/membros", require("./routes/membrosPainel"));
 app.use("/api/listas", require("./routes/listas"));
 app.use("/api/comentarios", require("./routes/comentarios"));
 app.use("/api/historico", require("./routes/historico"));
-app.use("/api/anexos", require("./routes/anexos"));
 app.use("/api/auth", require("./routes/auth"));
 
 app.listen(PORT, () => {

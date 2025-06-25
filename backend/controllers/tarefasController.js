@@ -1,7 +1,7 @@
 const model = require("../models/tarefasModel");
 const listasModel = require("../models/listasModel");
 const painelModel = require("../models/painelModel");
-const membrosModel = require("../models/membrosPainelModel");
+const { verificarPermissao } = require("../utils/permissoes");
 
 exports.getTarefas = async (req, res) => {
   try {
@@ -19,6 +19,12 @@ exports.criarTarefa = async (req, res) => {
 
     if (!titulo || !lista_id) {
       return res.status(400).json({ erro: "Campos obrigatórios ausentes" });
+    }
+
+    const lista = await listasModel.buscarPorId(lista_id);
+    const temPermissao = await verificarPermissao(lista.painel_id, req.usuario.id, ["admin", "editor"]);
+    if (!temPermissao) {
+      return res.status(403).json({ erro: "Você não tem permissão para criar tarefas neste painel." });
     }
 
     const novaTarefa = await model.inserir({
@@ -52,16 +58,9 @@ exports.atualizarTarefa = async (req, res) => {
     if (!tarefa) return res.status(404).json({ erro: "Tarefa não encontrada" });
 
     const lista = await listasModel.buscarPorId(tarefa.lista_id);
-    const painel = await painelModel.buscarPorId(lista.painel_id);
-    const isMembro = await membrosModel.verificarMembro(
-      painel.id,
-      req.usuario.id
-    );
-
-    if (tarefa.criado_por !== req.usuario.id && !isMembro) {
-      return res
-        .status(403)
-        .json({ erro: "Você não tem permissão para editar esta tarefa." });
+    const temPermissao = await verificarPermissao(lista.painel_id, req.usuario.id, ["admin", "editor"]);
+    if (!temPermissao) {
+      return res.status(403).json({ erro: "Você não tem permissão para editar esta tarefa." });
     }
 
     const { titulo, descricao, lista_id } = req.body;
@@ -84,16 +83,9 @@ exports.concluirTarefa = async (req, res) => {
     if (!tarefa) return res.status(404).json({ erro: "Tarefa não encontrada" });
 
     const lista = await listasModel.buscarPorId(tarefa.lista_id);
-    const painel = await painelModel.buscarPorId(lista.painel_id);
-    const isMembro = await membrosModel.verificarMembro(
-      painel.id,
-      req.usuario.id
-    );
-
-    if (tarefa.criado_por !== req.usuario.id && !isMembro) {
-      return res
-        .status(403)
-        .json({ erro: "Você não tem permissão para alterar esta tarefa." });
+    const temPermissao = await verificarPermissao(lista.painel_id, req.usuario.id, ["admin", "editor"]);
+    if (!temPermissao && tarefa.criado_por !== req.usuario.id) {
+      return res.status(403).json({ erro: "Você não tem permissão para alterar esta tarefa." });
     }
 
     const { concluida } = req.body;
@@ -111,16 +103,9 @@ exports.removerTarefa = async (req, res) => {
     if (!tarefa) return res.status(404).json({ erro: "Tarefa não encontrada" });
 
     const lista = await listasModel.buscarPorId(tarefa.lista_id);
-    const painel = await painelModel.buscarPorId(lista.painel_id);
-    const isMembro = await membrosModel.verificarMembro(
-      painel.id,
-      req.usuario.id
-    );
-
-    if (tarefa.criado_por !== req.usuario.id && !isMembro) {
-      return res
-        .status(403)
-        .json({ erro: "Você não tem permissão para remover esta tarefa." });
+    const temPermissao = await verificarPermissao(lista.painel_id, req.usuario.id, ["admin", "editor"]);
+    if (!temPermissao) {
+      return res.status(403).json({ erro: "Você não tem permissão para remover esta tarefa." });
     }
 
     await model.remover(req.params.id);
@@ -148,16 +133,9 @@ exports.atualizarPosicao = async (req, res) => {
     if (!tarefa) return res.status(404).json({ erro: "Tarefa não encontrada" });
 
     const lista = await listasModel.buscarPorId(tarefa.lista_id);
-    const painel = await painelModel.buscarPorId(lista.painel_id);
-    const isMembro = await membrosModel.verificarMembro(
-      painel.id,
-      req.usuario.id
-    );
-
-    if (painel.criado_por !== req.usuario.id && !isMembro) {
-      return res
-        .status(403)
-        .json({ erro: "Você não tem permissão para reordenar esta tarefa." });
+    const temPermissao = await verificarPermissao(lista.painel_id, req.usuario.id, ["admin", "editor"]);
+    if (!temPermissao) {
+      return res.status(403).json({ erro: "Você não tem permissão para reordenar esta tarefa." });
     }
 
     const { posicao } = req.body;

@@ -33,3 +33,11 @@ exports.verificarMembro = async (painel_id, usuario_id) => {
   );
   return result.rowCount > 0;
 };
+
+exports.buscarPorPainelEUsuario = async (painel_id, usuario_id) => {
+  const result = await db.query(
+    "SELECT * FROM membros_painel WHERE painel_id = $1 AND usuario_id = $2",
+    [painel_id, usuario_id]
+  );
+  return result.rows[0]; 
+};

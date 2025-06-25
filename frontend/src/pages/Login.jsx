@@ -29,6 +29,7 @@ export default function Login() {
 
       const data = await res.json();
       login(data.usuario, data.token);
+      localStorage.setItem("usuario", JSON.stringify(data.usuario));
       navigate("/");
     } catch (err) {
       setErro(err.message);
