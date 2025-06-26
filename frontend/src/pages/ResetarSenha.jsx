@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Botao from "../components/Botao"; // ajuste se necessário
+import Botao from "../components/Botao";
 
 export default function ResetarSenha() {
   const { token } = useParams();

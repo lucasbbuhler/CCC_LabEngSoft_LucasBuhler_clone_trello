@@ -33,7 +33,7 @@ export default function Navbar() {
       }}
     >
       <div style={{ marginRight: "auto", fontWeight: "bold" }}>
-        {usuario?.email || "Painéis"}
+        {usuario?.email || "Gerenciador de Tarefas"}
       </div>
 
       {location.pathname !== "/" && (
