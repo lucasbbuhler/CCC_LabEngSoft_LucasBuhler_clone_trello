@@ -176,7 +176,7 @@ export default function CompartilharPainel({ painelId, onFechar }) {
         Compartilhar Painel
       </h2>
 
-      {(isCriador || isEditor) && (
+      {(isCriador) && (
         <>
           <div style={{ marginBottom: "1rem" }}>
             <label htmlFor="email">E-mail do usuário</label>
